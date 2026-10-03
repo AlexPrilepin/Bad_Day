@@ -737,30 +737,30 @@ public class DispatchStepTests
     [Fact]
     public void Constructor_EmptyManifest_ThrowsArgumentException()
     {
-        
+        // Arrange
         var employees = new List<Employee> { _quickEmployee };
         Warehouse warehouse = CreateWarehouse(employees, 20);
 
-        
+        // Act
         Exception? exception = Record.Exception(() => new DispatchStep(warehouse, new Goods()));
 
-        
+        // Assert
         Assert.IsType<ArgumentException>(exception);
     }
 
     [Fact]
     public void Perform_TruckAtDockAndGoodsInStock_MovesGoodsIntoTruck()
     {
-        
+        // Arrange
         var truck = new Truck(new VolumetricWeight(60), new Speed(70), _dockLocation);
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, 20);
         var step = new DispatchStep(warehouse, CreateCrates(15));
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         StepResult.Success success = Assert.IsType<StepResult.Success>(result);
         Assert.Equal(TimeSpan.FromMinutes(20), success.Duration);
         Assert.Equal(15, truck.Cargo.CountUnits(_crate));
@@ -770,16 +770,16 @@ public class DispatchStepTests
     [Fact]
     public void Perform_OnlyStrongEmployee_ReturnsTimeOfThreeRounds()
     {
-        
+        // Arrange
         var truck = new Truck(new VolumetricWeight(60), new Speed(70), _dockLocation);
         var employees = new List<Employee> { _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, 20);
         var step = new DispatchStep(warehouse, CreateCrates(15));
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         StepResult.Success success = Assert.IsType<StepResult.Success>(result);
         Assert.Equal(TimeSpan.FromMinutes(30), success.Duration);
     }
@@ -787,16 +787,16 @@ public class DispatchStepTests
     [Fact]
     public void Perform_StockMissesManifestGoods_ReturnsFailureAndLeavesTruckEmpty()
     {
-        
+        // Arrange
         var truck = new Truck(new VolumetricWeight(60), new Speed(70), _dockLocation);
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, 10);
         var step = new DispatchStep(warehouse, CreateCrates(15));
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         Assert.IsType<StepResult.Failure>(result);
         Assert.Empty(truck.Cargo.LineItems);
         Assert.Equal(10, warehouse.Stock.CountUnits(_crate));
@@ -805,16 +805,16 @@ public class DispatchStepTests
     [Fact]
     public void Perform_TruckWithoutFreeCapacity_ReturnsFailureAndKeepsStock()
     {
-        
+        // Arrange
         var truck = new Truck(new VolumetricWeight(30), new Speed(70), _dockLocation);
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, 20);
         var step = new DispatchStep(warehouse, CreateCrates(15));
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         Assert.IsType<StepResult.Failure>(result);
         Assert.Empty(truck.Cargo.LineItems);
         Assert.Equal(20, warehouse.Stock.CountUnits(_crate));
@@ -823,17 +823,17 @@ public class DispatchStepTests
     [Fact]
     public void Perform_TruckFartherThanTenMeters_ReturnsFailureAndKeepsStock()
     {
-        
+        // Arrange
         var farLocation = new Location(59.9001, 30.3);
         var truck = new Truck(new VolumetricWeight(60), new Speed(70), farLocation);
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, 20);
         var step = new DispatchStep(warehouse, CreateCrates(15));
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         Assert.IsType<StepResult.Failure>(result);
         Assert.Empty(truck.Cargo.LineItems);
         Assert.Equal(20, warehouse.Stock.CountUnits(_crate));
@@ -874,15 +874,15 @@ public class DriveStepTests
     [Fact]
     public void Perform_TwoDegreesNorth_MovesTruckAndReturnsTravelTime()
     {
-        
+        // Arrange
         var destination = new Location(57, 37);
         var truck = new Truck(new VolumetricWeight(40), new Speed(80), new Location(55, 37));
         var step = new DriveStep(destination);
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         StepResult.Success success = Assert.IsType<StepResult.Success>(result);
         Assert.Equal(destination, truck.Location);
         Assert.Equal(166.79, success.Duration.TotalMinutes, 2);
@@ -891,15 +891,15 @@ public class DriveStepTests
     [Fact]
     public void Perform_SameLocation_TakesNoTime()
     {
-        
+        // Arrange
         var location = new Location(55, 37);
         var truck = new Truck(new VolumetricWeight(40), new Speed(80), location);
         var step = new DriveStep(location);
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         StepResult.Success success = Assert.IsType<StepResult.Success>(result);
         Assert.Equal(TimeSpan.Zero, success.Duration);
     }
@@ -958,7 +958,7 @@ public class ItineraryTests
     [Fact]
     public void Simulate_DispatchDriveReceive_ReturnsSumOfStepDurations()
     {
-        
+        // Arrange
         var truck = new Truck(new VolumetricWeight(60), new Speed(60), _source.Location);
 
         var itinerary = new Itinerary(new List<IItineraryStep>
@@ -968,10 +968,10 @@ public class ItineraryTests
             new ReceivingStep(_destination, _manifest),
         });
 
-        
+        // Act
         ItineraryResult result = itinerary.Simulate(truck);
 
-        
+        // Assert
         ItineraryResult.Success success = Assert.IsType<ItineraryResult.Success>(result);
         Assert.Equal(20 + 111.19 + 13, success.TotalDuration.TotalMinutes, 2);
         Assert.Equal(_destination.Location, truck.Location);
@@ -983,7 +983,7 @@ public class ItineraryTests
     [Fact]
     public void Simulate_ReceivingBeforeDriving_StopsAtFailedStep()
     {
-        
+        // Arrange
         var truck = new Truck(new VolumetricWeight(60), new Speed(60), _source.Location);
 
         var itinerary = new Itinerary(new List<IItineraryStep>
@@ -993,10 +993,10 @@ public class ItineraryTests
             new DriveStep(_destination.Location),
         });
 
-        
+        // Act
         ItineraryResult result = itinerary.Simulate(truck);
 
-        
+        // Assert
         Assert.IsType<ItineraryResult.Failure>(result);
         Assert.Equal(_source.Location, truck.Location);
         Assert.Equal(15, truck.Cargo.CountUnits(_crate));
@@ -1006,7 +1006,7 @@ public class ItineraryTests
     [Fact]
     public void Simulate_TruckTooSmallForManifest_StopsAtDispatch()
     {
-        
+        // Arrange
         var smallTruck = new Truck(new VolumetricWeight(30), new Speed(60), _source.Location);
 
         var itinerary = new Itinerary(new List<IItineraryStep>
@@ -1015,10 +1015,10 @@ public class ItineraryTests
             new DriveStep(_destination.Location),
         });
 
-        
+        // Act
         ItineraryResult result = itinerary.Simulate(smallTruck);
 
-        
+        // Assert
         Assert.IsType<ItineraryResult.Failure>(result);
         Assert.Equal(_source.Location, smallTruck.Location);
         Assert.Equal(20, _source.Stock.CountUnits(_crate));
@@ -1027,7 +1027,7 @@ public class ItineraryTests
     [Fact]
     public void Simulate_ItineraryAlreadyUsedBySlowTruck_TakesFastTruckSpeedIntoAccount()
     {
-        
+        // Arrange
         var slowTruck = new Truck(new VolumetricWeight(60), new Speed(60), _source.Location);
         var fastTruck = new Truck(new VolumetricWeight(60), new Speed(120), _source.Location);
         Goods tenCrates = CreateCrates(10);
@@ -1041,10 +1041,10 @@ public class ItineraryTests
 
         itinerary.Simulate(slowTruck);
 
-        
+        // Act
         ItineraryResult result = itinerary.Simulate(fastTruck);
 
-        
+        // Assert
         ItineraryResult.Success success = Assert.IsType<ItineraryResult.Success>(result);
         Assert.Equal(10 + 55.60 + 3, success.TotalDuration.TotalMinutes, 2);
         Assert.Equal(_destination.Location, fastTruck.Location);
@@ -1054,13 +1054,13 @@ public class ItineraryTests
     [Fact]
     public void Constructor_NoSteps_ThrowsArgumentException()
     {
-        
+        // Arrange
         var noSteps = new List<IItineraryStep>();
 
-        
+        // Act
         Exception? exception = Record.Exception(() => new Itinerary(noSteps));
 
-        
+        // Assert
         Assert.IsType<ArgumentException>(exception);
     }
 
@@ -1099,29 +1099,29 @@ public class ReceivingStepTests
     [Fact]
     public void Constructor_EmptyManifest_ThrowsArgumentException()
     {
-        
+        // Arrange
         Warehouse warehouse = CreateWarehouse(new VolumetricWeight(60));
 
-        
+        // Act
         Exception? exception = Record.Exception(() => new ReceivingStep(warehouse, new Goods()));
 
-        
+        // Assert
         Assert.IsType<ArgumentException>(exception);
     }
 
     [Fact]
     public void Perform_TruckAtDockWithManifestGoods_MovesGoodsWithoutLastCarrying()
     {
-        
+        // Arrange
         Goods manifest = CreateCrates(8);
         Truck truck = CreateTruck(_dockLocation, manifest);
         Warehouse warehouse = CreateWarehouse(new VolumetricWeight(60));
         var step = new ReceivingStep(warehouse, manifest);
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         StepResult.Success success = Assert.IsType<StepResult.Success>(result);
         Assert.Equal(TimeSpan.FromMinutes(8), success.Duration);
         Assert.Empty(truck.Cargo.LineItems);
@@ -1131,15 +1131,15 @@ public class ReceivingStepTests
     [Fact]
     public void Perform_TruckMissesManifestGoods_ReturnsFailureAndKeepsCargo()
     {
-        
+        // Arrange
         Truck truck = CreateTruck(_dockLocation, CreateCrates(5));
         Warehouse warehouse = CreateWarehouse(new VolumetricWeight(60));
         var step = new ReceivingStep(warehouse, CreateCrates(8));
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         Assert.IsType<StepResult.Failure>(result);
         Assert.Equal(5, truck.Cargo.CountUnits(_crate));
         Assert.Empty(warehouse.Stock.LineItems);
@@ -1148,16 +1148,16 @@ public class ReceivingStepTests
     [Fact]
     public void Perform_WarehouseWithoutFreeCapacity_ReturnsFailureAndReturnsCargoToTruck()
     {
-        
+        // Arrange
         Goods manifest = CreateCrates(8);
         Truck truck = CreateTruck(_dockLocation, manifest);
         Warehouse warehouse = CreateWarehouse(new VolumetricWeight(15));
         var step = new ReceivingStep(warehouse, manifest);
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         Assert.IsType<StepResult.Failure>(result);
         Assert.Equal(8, truck.Cargo.CountUnits(_crate));
         Assert.Empty(warehouse.Stock.LineItems);
@@ -1166,17 +1166,17 @@ public class ReceivingStepTests
     [Fact]
     public void Perform_TruckFartherThanTenMeters_ReturnsFailureAndKeepsCargo()
     {
-        
+        // Arrange
         var farLocation = new Location(59.9001, 30.3);
         Goods manifest = CreateCrates(8);
         Truck truck = CreateTruck(farLocation, manifest);
         Warehouse warehouse = CreateWarehouse(new VolumetricWeight(60));
         var step = new ReceivingStep(warehouse, manifest);
 
-        
+        // Act
         StepResult result = step.Perform(truck);
 
-        
+        // Assert
         Assert.IsType<StepResult.Failure>(result);
         Assert.Equal(8, truck.Cargo.CountUnits(_crate));
         Assert.Empty(warehouse.Stock.LineItems);
@@ -1244,43 +1244,43 @@ public class TruckTests
     [InlineData(double.PositiveInfinity)]
     public void Constructor_InvalidSpeed_ThrowsOutOfRange(double kilometersPerHour)
     {
-        
+        // Arrange
         var capacity = new VolumetricWeight(30);
         var location = new Location(59, 30);
 
-        
+        // Act
         Exception? exception = Record.Exception(
             () => new Truck(capacity, new Speed(kilometersPerHour), location));
 
-        
+        // Assert
         Assert.IsType<ArgumentOutOfRangeException>(exception);
     }
 
     [Fact]
     public void Constructor_ZeroCapacity_ThrowsOutOfRange()
     {
-        
+        // Arrange
         var zeroCapacity = new VolumetricWeight(0);
 
-        
+        // Act
         Exception? exception = Record.Exception(
             () => new Truck(zeroCapacity, new Speed(60), new Location(59, 30)));
 
-        
+        // Assert
         Assert.IsType<ArgumentOutOfRangeException>(exception);
     }
 
     [Fact]
     public void Load_GoodsWithinCapacity_UpdatesCargo()
     {
-        
+        // Arrange
         var lineItems = new List<LineItem> { new LineItem(_crate, 4), new LineItem(_barrel, 2) };
         var goods = new Goods(lineItems);
 
-        
+        // Act
         LoadResult result = _truck.Load(goods);
 
-        
+        // Assert
         Assert.IsType<LoadResult.Success>(result);
         Assert.Equal(4, _truck.Cargo.CountUnits(_crate));
         Assert.Equal(2, _truck.Cargo.CountUnits(_barrel));
@@ -1290,13 +1290,13 @@ public class TruckTests
     [Fact]
     public void Load_GoodsExactlyFillingCapacity_UpdatesCargo()
     {
-        
+        // Arrange
         var crates = new Goods(new List<LineItem> { new LineItem(_crate, 10) });
 
-        
+        // Act
         LoadResult result = _truck.Load(crates);
 
-        
+        // Assert
         Assert.IsType<LoadResult.Success>(result);
         Assert.Equal(_truck.Capacity, _truck.Cargo.VolumetricWeight);
     }
@@ -1304,13 +1304,13 @@ public class TruckTests
     [Fact]
     public void Load_GoodsOverCapacityIntoEmptyTruck_ReturnsFailureAndLeavesTruckEmpty()
     {
-        
+        // Arrange
         Goods crates = CreateCrates(11);
 
-        
+        // Act
         LoadResult result = _truck.Load(crates);
 
-        
+        // Assert
         Assert.IsType<LoadResult.Failure>(result);
         Assert.Empty(_truck.Cargo.LineItems);
     }
@@ -1318,14 +1318,14 @@ public class TruckTests
     [Fact]
     public void Load_GoodsOverFreeCapacity_ReturnsFailureAndKeepsCargo()
     {
-        
+        // Arrange
         _truck.Load(CreateCrates(6));
         var barrels = new Goods(new List<LineItem> { new LineItem(_barrel, 3) });
 
-        
+        // Act
         LoadResult result = _truck.Load(barrels);
 
-        
+        // Assert
         Assert.IsType<LoadResult.Failure>(result);
         Assert.Equal(6, _truck.Cargo.CountUnits(_crate));
         Assert.Equal(0, _truck.Cargo.CountUnits(_barrel));
@@ -1334,14 +1334,14 @@ public class TruckTests
     [Fact]
     public void Unload_GoodsInCargo_DecreasesCargo()
     {
-        
+        // Arrange
         _truck.Load(CreateCrates(6));
         Goods crates = CreateCrates(4);
 
-        
+        // Act
         UnloadResult result = _truck.Unload(crates);
 
-        
+        // Assert
         Assert.IsType<UnloadResult.Success>(result);
         Assert.Equal(2, _truck.Cargo.CountUnits(_crate));
     }
@@ -1349,14 +1349,14 @@ public class TruckTests
     [Fact]
     public void Unload_MoreThanLoaded_ReturnsFailureAndKeepsCargo()
     {
-        
+        // Arrange
         _truck.Load(CreateCrates(6));
         Goods crates = CreateCrates(7);
 
-        
+        // Act
         UnloadResult result = _truck.Unload(crates);
 
-        
+        // Assert
         Assert.IsType<UnloadResult.Failure>(result);
         Assert.Equal(6, _truck.Cargo.CountUnits(_crate));
     }
@@ -1364,13 +1364,13 @@ public class TruckTests
     [Fact]
     public void DriveTo_OneDegreeNorth_ChangesLocationAndTakesTimeBySpeed()
     {
-        
+        // Arrange
         var destination = new Location(60, 30);
 
-        
+        // Act
         TimeSpan travelTime = _truck.DriveTo(destination);
 
-        
+        // Assert
         Assert.Equal(destination, _truck.Location);
         Assert.Equal(111.19, travelTime.TotalMinutes, 2);
     }
@@ -1413,26 +1413,26 @@ public class CrewTests
     [Fact]
     public void Constructor_NoEmployees_ThrowsArgumentException()
     {
-        
+        // Arrange
         var noEmployees = new List<Employee>();
 
-        
+        // Act
         Exception? exception = Record.Exception(() => new Crew(noEmployees));
 
-        
+        // Assert
         Assert.IsType<ArgumentException>(exception);
     }
 
     [Fact]
     public void Plan_GoodsWithinMaxLoadOfOneEmployee_TakesOneRound()
     {
-        
+        // Arrange
         Goods goods = CreateCrates(4);
 
-        
+        // Act
         PlanningResult result = _oneEmployeeCrew.Plan(goods);
 
-        
+        // Assert
         PlanningResult.Success plan = Assert.IsType<PlanningResult.Success>(result);
         Assert.Equal(1, plan.RoundsCount);
         Assert.Equal(TimeSpan.FromMinutes(6), plan.DispatchTime);
@@ -1442,13 +1442,13 @@ public class CrewTests
     [Fact]
     public void Plan_GoodsOverMaxLoadOfOneEmployee_TakesSeveralRounds()
     {
-        
+        // Arrange
         Goods goods = CreateCrates(7);
 
-        
+        // Act
         PlanningResult result = _oneEmployeeCrew.Plan(goods);
 
-        
+        // Assert
         PlanningResult.Success plan = Assert.IsType<PlanningResult.Success>(result);
         Assert.Equal(2, plan.RoundsCount);
         Assert.Equal(TimeSpan.FromMinutes(12), plan.DispatchTime);
@@ -1458,7 +1458,7 @@ public class CrewTests
     [Fact]
     public void Plan_SkuOnlyStrongEmployeeCanLift_StrongEmployeeCarriesItAlone()
     {
-        
+        // Arrange
         var quickEmployee = new Employee(
             new VolumetricWeight(12),
             TimeSpan.FromMinutes(2),
@@ -1473,10 +1473,10 @@ public class CrewTests
         var engine = new Sku(new SkuId(104), "Engine", new VolumetricWeight(15));
         var goods = new Goods(new List<LineItem> { new LineItem(engine, 2) });
 
-        
+        // Act
         PlanningResult result = crew.Plan(goods);
 
-        
+        // Assert
         PlanningResult.Success plan = Assert.IsType<PlanningResult.Success>(result);
         Assert.Equal(2, plan.RoundsCount);
         Assert.Equal(TimeSpan.FromMinutes(20), plan.DispatchTime);
@@ -1485,15 +1485,15 @@ public class CrewTests
     [Fact]
     public void Plan_OneSkuHeavierThanEveryEmployee_ReturnsFailure()
     {
-        
+        // Arrange
         var piano = new Sku(new SkuId(103), "Piano", new VolumetricWeight(20));
         var lineItems = new List<LineItem> { new LineItem(_crate, 2), new LineItem(piano, 1) };
         var goods = new Goods(lineItems);
 
-        
+        // Act
         PlanningResult result = _oneEmployeeCrew.Plan(goods);
 
-        
+        // Assert
         Assert.IsType<PlanningResult.Failure>(result);
     }
 
@@ -1537,15 +1537,15 @@ public class WarehouseHandlingTimeTests
     [Fact]
     public void Receive_OneEmployee_SkipsCarryingInLastRound()
     {
-        
+        // Arrange
         var employees = new List<Employee> { _quickEmployee };
         Warehouse warehouse = CreateWarehouse(employees, new Goods());
         Goods goods = CreateCrates(8);
 
-        
+        // Act
         ReceivingResult result = warehouse.Receive(goods);
 
-        
+        // Assert
         ReceivingResult.Success success = Assert.IsType<ReceivingResult.Success>(result);
         Assert.Equal(2, success.RoundsCount);
         Assert.Equal(TimeSpan.FromMinutes(8), success.Duration);
@@ -1554,15 +1554,15 @@ public class WarehouseHandlingTimeTests
     [Fact]
     public void Dispatch_OneEmployee_CountsEveryRoundFully()
     {
-        
+        // Arrange
         Goods stock = CreateCrates(8);
         var employees = new List<Employee> { _quickEmployee };
         Warehouse warehouse = CreateWarehouse(employees, stock);
 
-        
+        // Act
         DispatchResult result = warehouse.Dispatch(stock);
 
-        
+        // Assert
         DispatchResult.Success success = Assert.IsType<DispatchResult.Success>(result);
         Assert.Equal(2, success.RoundsCount);
         Assert.Equal(TimeSpan.FromMinutes(12), success.Duration);
@@ -1571,15 +1571,15 @@ public class WarehouseHandlingTimeTests
     [Fact]
     public void Receive_TwoEmployees_WaitsForSlowestExceptLastCarrying()
     {
-        
+        // Arrange
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, new Goods());
         Goods goods = CreateCrates(15);
 
-        
+        // Act
         ReceivingResult result = warehouse.Receive(goods);
 
-        
+        // Assert
         ReceivingResult.Success success = Assert.IsType<ReceivingResult.Success>(result);
         Assert.Equal(TimeSpan.FromMinutes(13), success.Duration);
     }
@@ -1587,15 +1587,15 @@ public class WarehouseHandlingTimeTests
     [Fact]
     public void Dispatch_TwoEmployees_WaitsForSlowestInEveryRound()
     {
-        
+        // Arrange
         Goods stock = CreateCrates(15);
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, stock);
 
-        
+        // Act
         DispatchResult result = warehouse.Dispatch(stock);
 
-        
+        // Assert
         DispatchResult.Success success = Assert.IsType<DispatchResult.Success>(result);
         Assert.Equal(TimeSpan.FromMinutes(20), success.Duration);
     }
@@ -1603,15 +1603,15 @@ public class WarehouseHandlingTimeTests
     [Fact]
     public void Dispatch_GoodsFitFirstEmployee_OnlyHisTimeCounts()
     {
-        
+        // Arrange
         Goods stock = CreateCrates(3);
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, stock);
 
-        
+        // Act
         DispatchResult result = warehouse.Dispatch(stock);
 
-        
+        // Assert
         DispatchResult.Success success = Assert.IsType<DispatchResult.Success>(result);
         Assert.Equal(TimeSpan.FromMinutes(6), success.Duration);
     }
@@ -1619,15 +1619,15 @@ public class WarehouseHandlingTimeTests
     [Fact]
     public void Dispatch_GoodsOverWholeCrewLoad_CountsRounds()
     {
-        
+        // Arrange
         Goods stock = CreateCrates(25);
         var employees = new List<Employee> { _quickEmployee, _strongEmployee };
         Warehouse warehouse = CreateWarehouse(employees, stock);
 
-        
+        // Act
         DispatchResult result = warehouse.Dispatch(stock);
 
-        
+        // Assert
         DispatchResult.Success success = Assert.IsType<DispatchResult.Success>(result);
         Assert.Equal(3, success.RoundsCount);
         Assert.Equal(TimeSpan.FromMinutes(30), success.Duration);
@@ -1696,16 +1696,16 @@ public class WarehouseStockTests
     [Fact]
     public void Constructor_ValidAttributes_KeepsAttributes()
     {
-        
+        // Arrange
         var id = new WarehouseId(2);
         var location = new Location(59, 30);
         var capacity = new VolumetricWeight(60);
         Goods stock = CreateCrates(5);
 
-        
+        // Act
         var warehouse = new Warehouse(id, location, capacity, _crew, stock);
 
-        
+        // Assert
         Assert.Equal(id, warehouse.Id);
         Assert.Equal(location, warehouse.Location);
         Assert.Equal(capacity, warehouse.Capacity);
@@ -1715,10 +1715,10 @@ public class WarehouseStockTests
     [Fact]
     public void Constructor_StockOverCapacity_ThrowsArgumentException()
     {
-        
+        // Arrange
         Goods tooManyCrates = CreateCrates(21);
 
-        
+        // Act
         Exception? exception = Record.Exception(() => new Warehouse(
             new WarehouseId(2),
             new Location(59, 30),
@@ -1726,20 +1726,20 @@ public class WarehouseStockTests
             _crew,
             tooManyCrates));
 
-        
+        // Assert
         Assert.IsType<ArgumentException>(exception);
     }
 
     [Fact]
     public void Receive_GoodsWithinFreeCapacity_IncreasesStock()
     {
-        
+        // Arrange
         Goods goods = CreateCrates(10);
 
-        
+        // Act
         ReceivingResult result = _warehouse.Receive(goods);
 
-        
+        // Assert
         Assert.IsType<ReceivingResult.Success>(result);
         Assert.Equal(15, _warehouse.Stock.CountUnits(_crate));
     }
@@ -1747,13 +1747,13 @@ public class WarehouseStockTests
     [Fact]
     public void Receive_GoodsOverFreeCapacity_ReturnsFailureAndKeepsStock()
     {
-        
+        // Arrange
         Goods goods = CreateCrates(16);
 
-        
+        // Act
         ReceivingResult result = _warehouse.Receive(goods);
 
-        
+        // Assert
         Assert.IsType<ReceivingResult.Failure>(result);
         Assert.Equal(5, _warehouse.Stock.CountUnits(_crate));
     }
@@ -1761,15 +1761,15 @@ public class WarehouseStockTests
     [Fact]
     public void Receive_GoodsTooHeavyForEveryEmployee_ReturnsFailureAndKeepsStock()
     {
-        
+        // Arrange
         var piano = new Sku(new SkuId(103), "Piano", new VolumetricWeight(20));
         var lineItems = new List<LineItem> { new LineItem(piano, 1) };
         var goods = new Goods(lineItems);
 
-        
+        // Act
         ReceivingResult result = _warehouse.Receive(goods);
 
-        
+        // Assert
         Assert.IsType<ReceivingResult.Failure>(result);
         Assert.Equal(0, _warehouse.Stock.CountUnits(piano));
         Assert.Equal(5, _warehouse.Stock.CountUnits(_crate));
@@ -1778,13 +1778,13 @@ public class WarehouseStockTests
     [Fact]
     public void Receive_EmptyGoods_ThrowsArgumentException()
     {
-        
+        // Arrange
         var emptyGoods = new Goods();
 
-        
+        // Act
         Exception? exception = Record.Exception(() => _warehouse.Receive(emptyGoods));
 
-        
+        // Assert
         Assert.IsType<ArgumentException>(exception);
         Assert.Equal(5, _warehouse.Stock.CountUnits(_crate));
     }
@@ -1792,13 +1792,13 @@ public class WarehouseStockTests
     [Fact]
     public void Dispatch_GoodsInStock_DecreasesStock()
     {
-        
+        // Arrange
         Goods goods = CreateCrates(3);
 
-        
+        // Act
         DispatchResult result = _warehouse.Dispatch(goods);
 
-        
+        // Assert
         Assert.IsType<DispatchResult.Success>(result);
         Assert.Equal(2, _warehouse.Stock.CountUnits(_crate));
     }
@@ -1806,13 +1806,13 @@ public class WarehouseStockTests
     [Fact]
     public void Dispatch_MoreThanInStock_ReturnsFailureAndKeepsStock()
     {
-        
+        // Arrange
         Goods goods = CreateCrates(6);
 
-        
+        // Act
         DispatchResult result = _warehouse.Dispatch(goods);
 
-        
+        // Assert
         Assert.IsType<DispatchResult.Failure>(result);
         Assert.Equal(5, _warehouse.Stock.CountUnits(_crate));
     }
@@ -1820,7 +1820,7 @@ public class WarehouseStockTests
     [Fact]
     public void Dispatch_GoodsTooHeavyForEveryEmployee_ReturnsFailureAndKeepsStock()
     {
-        
+        // Arrange
         var piano = new Sku(new SkuId(103), "Piano", new VolumetricWeight(20));
         var pianos = new Goods(new List<LineItem> { new LineItem(piano, 1) });
 
@@ -1831,10 +1831,10 @@ public class WarehouseStockTests
             _crew,
             pianos);
 
-        
+        // Act
         DispatchResult result = warehouse.Dispatch(pianos);
 
-        
+        // Assert
         Assert.IsType<DispatchResult.Failure>(result);
         Assert.Equal(1, warehouse.Stock.CountUnits(piano));
     }
